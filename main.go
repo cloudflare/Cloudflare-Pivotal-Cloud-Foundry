@@ -1,84 +1,113 @@
 package main
 
 import (
-    "net/http"
-    "os"
+	"encoding/json"
+	"fmt"
+	"net/http"
+	"os"
 
-    "github.com/pivotal-cf/brokerapi"
-    "code.cloudfoundry.org/lager"
+	"code.cloudfoundry.org/lager"
+	"github.com/pivotal-cf/brokerapi"
 )
 
-type myServiceBroker struct {}
+const BROKER_USERNAME = "BROKER_USERNAME"
+const BROKER_PASSWORD = "BROKER_PASSWORD"
+const PORT = "PORT"
+const X_AUTH_EMAIL_HEADER = "X-Auth-Email"
+const X_AUTH_KEY_HEADER = "X-Auth-Key"
+
+type myServiceBroker struct{}
 
 func (*myServiceBroker) Services() []brokerapi.Service {
-    return []brokerapi.Service{
-        brokerapi.Service {
-            Name: "cloudflare",
-            ID: "cloudflare",
-            Description: "Give us five minutes and we’ll supercharge your website.",
-            Bindable: true,
-            Plans: []brokerapi.ServicePlan{
-                brokerapi.ServicePlan{
-                    ID: "cloudflare-free",
-                    Name: "cloudflare-free",
-                    Description: "Fast site performance. Broad security protection. SSL. Powerful stats about your visitors. Peace of mind about running your website so you can get back to what you love.",
-                },
-            },
-        },
-    }
+	return []brokerapi.Service{
+		brokerapi.Service{
+			Name:        "cloudflare",
+			ID:          "cloudflare",
+			Description: "Give us five minutes and we’ll supercharge your website.",
+			Bindable:    true,
+			Plans: []brokerapi.ServicePlan{
+				brokerapi.ServicePlan{
+					ID:          "cloudflare-free",
+					Name:        "cloudflare-free",
+					Description: "Fast site performance. Broad security protection. SSL. Powerful stats about your visitors. Peace of mind about running your website so you can get back to what you love.",
+				},
+			},
+		},
+	}
 }
 
 func (*myServiceBroker) Provision(
-    instanceID string,
-    details brokerapi.ProvisionDetails,
-    asyncAllowed bool,
+	instanceID string,
+	details brokerapi.ProvisionDetails,
+	asyncAllowed bool,
 ) (brokerapi.ProvisionedServiceSpec, error) {
-    // Provision a new instance here. If async is allowed, the broker can still
-    // chose to provision the instance synchronously.
+	// Provision a new instance here. If async is allowed, the broker can still
+	// chose to provision the instance synchronously.
 
-    return brokerapi.ProvisionedServiceSpec{}, nil
+	var authHeaders AuthHeaders
+	if err := json.Unmarshal(details.RawParameters, &authHeaders); err != nil {
+		fmt.Printf("Error decoding details.RawParameters")
+	}
+
+	saveAuthHeaders(authHeaders)
+
+	return brokerapi.ProvisionedServiceSpec{
+		IsAsync:       false,
+		DashboardURL:  "",
+		OperationData: "",
+	}, nil
+}
+
+type AuthHeaders struct {
+	XAuthEmail string `json:"x-auth-email"`
+	XAuthKey   string `json:"x-auth-key"`
+}
+
+func saveAuthHeaders(authHeaders AuthHeaders) {
+	os.Setenv(X_AUTH_EMAIL_HEADER, authHeaders.XAuthEmail)
+	os.Setenv(X_AUTH_KEY_HEADER, authHeaders.XAuthKey)
 }
 
 func (*myServiceBroker) LastOperation(instanceID, operationData string) (brokerapi.LastOperation, error) {
-    // If the broker provisions asynchronously, the Cloud Controller will poll this endpoint
-    // for the status of the provisioning operation.
-    // This also applies to deprovisioning (work in progress).
-    return brokerapi.LastOperation{}, nil
+	// If the broker provisions asynchronously, the Cloud Controller will poll this endpoint
+	// for the status of the provisioning operation.
+	// This also applies to deprovisioning (work in progress).
+	return brokerapi.LastOperation{}, nil
 }
 
 func (*myServiceBroker) Deprovision(instanceID string, details brokerapi.DeprovisionDetails, asyncAllowed bool) (brokerapi.DeprovisionServiceSpec, error) {
-    // Deprovision a new instance here. If async is allowed, the broker can still
-    // chose to deprovision the instance synchronously, hence the first return value.
-    return brokerapi.DeprovisionServiceSpec{}, nil
+	// Deprovision a new instance here. If async is allowed, the broker can still
+	// chose to deprovision the instance synchronously, hence the first return value.
+	return brokerapi.DeprovisionServiceSpec{}, nil
 }
 
 func (*myServiceBroker) Bind(instanceID, bindingID string, details brokerapi.BindDetails) (brokerapi.Binding, error) {
-    // Bind to instances here
-    // Return a binding which contains a credentials object that can be marshalled to JSON,
-    // and (optionally) a syslog drain URL.
+	// Bind to instances here
+	// Return a binding which contains a credentials object that can be marshalled to JSON,
+	// and (optionally) a syslog drain URL.
 
-    return brokerapi.Binding{}, nil
+	return brokerapi.Binding{}, nil
 }
 
 func (*myServiceBroker) Unbind(instanceID, bindingID string, details brokerapi.UnbindDetails) error {
-    // Unbind from instances here
-    return nil
+	// Unbind from instances here
+	return nil
 }
 
 func (*myServiceBroker) Update(instanceID string, details brokerapi.UpdateDetails, asyncAllowed bool) (brokerapi.UpdateServiceSpec, error) {
-    // Update instance here
-    return brokerapi.UpdateServiceSpec{}, nil
+	// Update instance here
+	return brokerapi.UpdateServiceSpec{}, nil
 }
 
 func main() {
-    serviceBroker := &myServiceBroker{}
-    logger := lager.NewLogger("my-service-broker")
-    credentials := brokerapi.BrokerCredentials{
-        Username: os.Getenv("BROKER_USERNAME"),
-        Password: os.Getenv("BROKER_PASSWORD"),
-    }
+	serviceBroker := &myServiceBroker{}
+	logger := lager.NewLogger("my-service-broker")
+	credentials := brokerapi.BrokerCredentials{
+		Username: os.Getenv(BROKER_USERNAME),
+		Password: os.Getenv(BROKER_PASSWORD),
+	}
 
-    brokerAPI := brokerapi.New(serviceBroker, logger, credentials)
-    http.Handle("/", brokerAPI)
-    http.ListenAndServe(":3000", nil)
+	brokerAPI := brokerapi.New(serviceBroker, logger, credentials)
+	http.Handle("/", brokerAPI)
+	http.ListenAndServe(":"+os.Getenv(PORT), nil)
 }
