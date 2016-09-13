@@ -2,6 +2,7 @@ package main
 
 import (
     "net/http"
+    "os"
 
     "github.com/pivotal-cf/brokerapi"
     "code.cloudfoundry.org/lager"
@@ -73,8 +74,8 @@ func main() {
     serviceBroker := &myServiceBroker{}
     logger := lager.NewLogger("my-service-broker")
     credentials := brokerapi.BrokerCredentials{
-        Username: "username",
-        Password: "password",
+        Username: os.Getenv("BROKER_USERNAME"),
+        Password: os.Getenv("BROKER_PASSWORD"),
     }
 
     brokerAPI := brokerapi.New(serviceBroker, logger, credentials)
