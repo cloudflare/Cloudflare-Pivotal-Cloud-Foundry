@@ -10,8 +10,21 @@ import (
 type myServiceBroker struct {}
 
 func (*myServiceBroker) Services() []brokerapi.Service {
-    // Return a []brokerapi.Service here, describing your service(s) and plan(s)
-    return []brokerapi.Service{}
+    return []brokerapi.Service{
+        brokerapi.Service {
+            Name: "cloudflare",
+            ID: "cloudflare",
+            Description: "Give us five minutes and we’ll supercharge your website.",
+            Bindable: true,
+            Plans: []brokerapi.ServicePlan{
+                brokerapi.ServicePlan{
+                    ID: "cloudflare-free",
+                    Name: "cloudflare-free",
+                    Description: "Fast site performance. Broad security protection. SSL. Powerful stats about your visitors. Peace of mind about running your website so you can get back to what you love.",
+                },
+            },
+        },
+    }
 }
 
 func (*myServiceBroker) Provision(
