@@ -102,6 +102,10 @@ func (m *myServiceBroker) Bind(instanceID, bindingID string, details brokerapi.B
 	// Return a binding which contains a credentials object that can be marshalled to JSON,
 	// and (optionally) a syslog drain URL.
 
+	_, isDomainInDictionary := details.Parameters["domain"]
+	if isDomainInDictionary == false {
+		return brokerapi.Binding{}, errors.New("key 'domain' not found in BindDetails.Parameters.")
+	}
 	var domain = details.Parameters["domain"].(string)
 
 	var client = http.Client{}
@@ -116,22 +120,22 @@ func (m *myServiceBroker) Bind(instanceID, bindingID string, details brokerapi.B
 
 	response, error := client.Do(request)
 
-	if error == nil {
-		buffer := new(bytes.Buffer)
-		buffer.ReadFrom(response.Body)
-		var zoneCreateClientResponse ZoneCreateClientResponse
-
-		if error := json.Unmarshal(buffer.Bytes(), &zoneCreateClientResponse); error != nil {
-			m.logger.Error("Error decoding details.RawParameters", error)
-			return brokerapi.Binding{}, error
-		}
-
-		if zoneCreateClientResponse.Success == false {
-			m.logger.Error("Error from CloudFlare Client API", errors.New(fmt.Sprintf("%+v", zoneCreateClientResponse)))
-			return brokerapi.Binding{}, errors.New(fmt.Sprintf("%+v", zoneCreateClientResponse))
-		}
-	} else {
+	if error != nil {
 		return brokerapi.Binding{}, error
+	}
+
+	buffer := new(bytes.Buffer)
+	buffer.ReadFrom(response.Body)
+	var zoneCreateClientResponse ZoneCreateClientResponse
+
+	if error := json.Unmarshal(buffer.Bytes(), &zoneCreateClientResponse); error != nil {
+		m.logger.Error("Error decoding details.RawParameters", error)
+		return brokerapi.Binding{}, error
+	}
+
+	if zoneCreateClientResponse.Success == false {
+		m.logger.Error("Error from CloudFlare Client API", errors.New(fmt.Sprintf("%+v", zoneCreateClientResponse)))
+		return brokerapi.Binding{}, errors.New(fmt.Sprintf("%+v", zoneCreateClientResponse))
 	}
 
 	return brokerapi.Binding{}, nil
@@ -140,8 +144,12 @@ func (m *myServiceBroker) Bind(instanceID, bindingID string, details brokerapi.B
 type ZoneCreateClientResponse struct {
 	Errors   []interface{} `json:"errors"`
 	Messages []interface{} `json:"messages"`
-	Result   []struct{}    `json:"result"`
-	Success  bool          `json:"success"`
+	Result   struct {
+			 ID          string   `json:"id"`
+			 Name        string   `json:"name"`
+			 NameServers []string `json:"name_servers"`
+		 } `json:"result"`
+	Success bool `json:"success"`
 }
 
 func (*myServiceBroker) Unbind(instanceID, bindingID string, details brokerapi.UnbindDetails) error {
