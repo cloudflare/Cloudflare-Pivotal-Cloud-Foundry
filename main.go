@@ -1,7 +1,9 @@
 package main
 
 import (
+	"bytes"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"net/http"
 	"os"
@@ -10,13 +12,17 @@ import (
 	"github.com/pivotal-cf/brokerapi"
 )
 
-const BROKER_USERNAME = "BROKER_USERNAME"
 const BROKER_PASSWORD = "BROKER_PASSWORD"
-const PORT = "PORT"
+const BROKER_PORT = "PORT"
+const BROKER_USERNAME = "BROKER_USERNAME"
+const CLOUDFLARE_EMAIL = "CLOUDFLARE_EMAIL"
+const CLOUDFLARE_API_KEY = "CLOUDFLARE_API_KEY"
 const X_AUTH_EMAIL_HEADER = "X-Auth-Email"
 const X_AUTH_KEY_HEADER = "X-Auth-Key"
 
-type myServiceBroker struct{}
+type myServiceBroker struct {
+	logger lager.Logger
+}
 
 func (*myServiceBroker) Services() []brokerapi.Service {
 	return []brokerapi.Service{
@@ -36,7 +42,7 @@ func (*myServiceBroker) Services() []brokerapi.Service {
 	}
 }
 
-func (*myServiceBroker) Provision(
+func (m *myServiceBroker) Provision(
 	instanceID string,
 	details brokerapi.ProvisionDetails,
 	asyncAllowed bool,
@@ -45,11 +51,12 @@ func (*myServiceBroker) Provision(
 	// chose to provision the instance synchronously.
 
 	var authHeaders AuthHeaders
-	if err := json.Unmarshal(details.RawParameters, &authHeaders); err != nil {
-		fmt.Printf("Error decoding details.RawParameters")
+	if error := json.Unmarshal(details.RawParameters, &authHeaders); error != nil {
+		m.logger.Error("Error decoding details.RawParameters", error)
+		return brokerapi.ProvisionedServiceSpec{}, error
 	}
 
-	saveAuthHeaders(authHeaders)
+	setAuthHeaders(authHeaders)
 
 	return brokerapi.ProvisionedServiceSpec{
 		IsAsync:       false,
@@ -63,9 +70,18 @@ type AuthHeaders struct {
 	XAuthKey   string `json:"x-auth-key"`
 }
 
-func saveAuthHeaders(authHeaders AuthHeaders) {
-	os.Setenv(X_AUTH_EMAIL_HEADER, authHeaders.XAuthEmail)
-	os.Setenv(X_AUTH_KEY_HEADER, authHeaders.XAuthKey)
+func getAuthHeaders() AuthHeaders {
+	return AuthHeaders{
+		XAuthEmail: os.Getenv(CLOUDFLARE_EMAIL),
+		XAuthKey:   os.Getenv(CLOUDFLARE_API_KEY),
+	}
+}
+
+func setAuthHeaders(authHeaders AuthHeaders) AuthHeaders {
+	os.Setenv(CLOUDFLARE_EMAIL, authHeaders.XAuthEmail)
+	os.Setenv(CLOUDFLARE_API_KEY, authHeaders.XAuthKey)
+
+	return getAuthHeaders()
 }
 
 func (*myServiceBroker) LastOperation(instanceID, operationData string) (brokerapi.LastOperation, error) {
@@ -81,12 +97,51 @@ func (*myServiceBroker) Deprovision(instanceID string, details brokerapi.Deprovi
 	return brokerapi.DeprovisionServiceSpec{}, nil
 }
 
-func (*myServiceBroker) Bind(instanceID, bindingID string, details brokerapi.BindDetails) (brokerapi.Binding, error) {
+func (m *myServiceBroker) Bind(instanceID, bindingID string, details brokerapi.BindDetails) (brokerapi.Binding, error) {
 	// Bind to instances here
 	// Return a binding which contains a credentials object that can be marshalled to JSON,
 	// and (optionally) a syslog drain URL.
 
+	var domain = details.Parameters["domain"].(string)
+
+	var client = http.Client{}
+
+	var jsonBody = []byte(`{"name" : "` + domain + `"}`)
+	request, error := http.NewRequest("POST", "https://api.cloudflare.com/client/v4/zones", bytes.NewReader(jsonBody))
+
+	var authHeaders = getAuthHeaders()
+
+	request.Header.Add(X_AUTH_EMAIL_HEADER, authHeaders.XAuthEmail)
+	request.Header.Add(X_AUTH_KEY_HEADER, authHeaders.XAuthKey)
+
+	response, error := client.Do(request)
+
+	if error == nil {
+		buffer := new(bytes.Buffer)
+		buffer.ReadFrom(response.Body)
+		var zoneCreateClientResponse ZoneCreateClientResponse
+
+		if error := json.Unmarshal(buffer.Bytes(), &zoneCreateClientResponse); error != nil {
+			m.logger.Error("Error decoding details.RawParameters", error)
+			return brokerapi.Binding{}, error
+		}
+
+		if zoneCreateClientResponse.Success == false {
+			m.logger.Error("Error from CloudFlare Client API", errors.New(fmt.Sprintf("%+v", zoneCreateClientResponse)))
+			return brokerapi.Binding{}, errors.New(fmt.Sprintf("%+v", zoneCreateClientResponse))
+		}
+	} else {
+		return brokerapi.Binding{}, error
+	}
+
 	return brokerapi.Binding{}, nil
+}
+
+type ZoneCreateClientResponse struct {
+	Errors   []interface{} `json:"errors"`
+	Messages []interface{} `json:"messages"`
+	Result   []struct{}    `json:"result"`
+	Success  bool          `json:"success"`
 }
 
 func (*myServiceBroker) Unbind(instanceID, bindingID string, details brokerapi.UnbindDetails) error {
@@ -100,8 +155,11 @@ func (*myServiceBroker) Update(instanceID string, details brokerapi.UpdateDetail
 }
 
 func main() {
-	serviceBroker := &myServiceBroker{}
 	logger := lager.NewLogger("my-service-broker")
+	logger.RegisterSink(lager.NewWriterSink(os.Stderr, lager.DEBUG))
+	serviceBroker := &myServiceBroker{
+		logger: logger,
+	}
 	credentials := brokerapi.BrokerCredentials{
 		Username: os.Getenv(BROKER_USERNAME),
 		Password: os.Getenv(BROKER_PASSWORD),
@@ -109,5 +167,5 @@ func main() {
 
 	brokerAPI := brokerapi.New(serviceBroker, logger, credentials)
 	http.Handle("/", brokerAPI)
-	http.ListenAndServe(":"+os.Getenv(PORT), nil)
+	http.ListenAndServe(":"+os.Getenv(BROKER_PORT), nil)
 }
