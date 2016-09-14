@@ -1,24 +1,6 @@
 {
-	"ImportPath": "github.com/jwineman/CloudFlare-Pivotal-Cloud-Foundry",
-	"GoVersion": "go1.7",
+	"ImportPath": ".",
+	"GoVersion": "go1.6",
 	"GodepVersion": "v74",
-	"Deps": [
-		{
-			"ImportPath": "code.cloudfoundry.org/lager",
-			"Rev": "62951a8009ab331bb21dc418074fa54e66eb9b6a"
-		},
-		{
-			"ImportPath": "github.com/gorilla/mux",
-			"Comment": "v1.1-25-g0a192a1",
-			"Rev": "0a192a193177452756c362c20087ddafcf6829c4"
-		},
-		{
-			"ImportPath": "github.com/pivotal-cf/brokerapi",
-			"Rev": "49533adbb2d7b3ef588ac6c7206da47d27de80b6"
-		},
-		{
-			"ImportPath": "github.com/pivotal-cf/brokerapi/auth",
-			"Rev": "49533adbb2d7b3ef588ac6c7206da47d27de80b6"
-		}
-	]
+	"Deps": []
 }
