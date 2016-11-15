@@ -8,7 +8,6 @@ import (
 	"fmt"
 	"io/ioutil"
 	"net/http"
-	"os"
 
 	"code.cloudfoundry.org/lager"
 	"github.com/pivotal-cf/brokerapi"
@@ -17,8 +16,6 @@ import (
 const BROKER_PASSWORD = "BROKER_PASSWORD"
 const BROKER_PORT = "BROKER_PORT"
 const BROKER_USERNAME = "BROKER_USERNAME"
-const CLOUDFLARE_EMAIL = "CLOUDFLARE_EMAIL"
-const CLOUDFLARE_API_KEY = "CLOUDFLARE_API_KEY"
 const X_AUTH_EMAIL_HEADER = "X-Auth-Email"
 const X_AUTH_KEY_HEADER = "X-Auth-Key"
 
@@ -49,17 +46,11 @@ type ZoneCreateResponse struct {
 }
 
 func (b *CloudflareBroker) getAuthHeaders() AuthHeaders {
-	return AuthHeaders{
-		XAuthEmail: os.Getenv(CLOUDFLARE_EMAIL),
-		XAuthKey:   os.Getenv(CLOUDFLARE_API_KEY),
-	}
+	return b.Auth
 }
 
-func (b *CloudflareBroker) setAuthHeaders(authHeaders AuthHeaders) AuthHeaders {
-	os.Setenv(CLOUDFLARE_EMAIL, authHeaders.XAuthEmail)
-	os.Setenv(CLOUDFLARE_API_KEY, authHeaders.XAuthKey)
-
-	return b.getAuthHeaders()
+func (b *CloudflareBroker) setAuthHeaders(authHeaders AuthHeaders) {
+	b.Auth = authHeaders
 }
 
 func (*CloudflareBroker) Services(context context.Context) []brokerapi.Service {
@@ -111,16 +102,11 @@ func (b *CloudflareBroker) Provision(context context.Context, instanceID string,
 }
 
 func (b *CloudflareBroker) Deprovision(context context.Context, instanceID string, details brokerapi.DeprovisionDetails, asyncAllowed bool) (brokerapi.DeprovisionServiceSpec, error) {
-	// Clear environment variables
-	envVariables := [5]string{BROKER_PASSWORD, BROKER_PORT, BROKER_USERNAME, CLOUDFLARE_EMAIL, CLOUDFLARE_API_KEY}
-	for _, envVariable := range envVariables {
-		if err := os.Unsetenv(envVariable); err != nil {
-			return brokerapi.DeprovisionServiceSpec{}, errors.New("Failed Devprovisioning")
-		}
-	}
-
-	// Clear set data
+	// Clear data
+	// TODO Clearing zones may not be the expected behaivour of this function
+	// Also we can clear zones and auth by id provided to details
 	b.Zones = map[string]Zone{}
+	b.Auth = AuthHeaders{}
 
 	return brokerapi.DeprovisionServiceSpec{}, nil
 }
