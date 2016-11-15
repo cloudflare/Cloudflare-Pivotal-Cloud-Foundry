@@ -65,17 +65,29 @@ func (b *CloudflareBroker) setAuthHeaders(authHeaders AuthHeaders) AuthHeaders {
 func (*CloudflareBroker) Services(context context.Context) []brokerapi.Service {
 	return []brokerapi.Service{
 		{
-			Name:          "cloudflare",
-			ID:            "cloudflare",
+			ID:            "31e38e96-df7e-4a38-b3cb-f489fc8ab421",
+			Name:          "Cloudflare",
 			Description:   "Give us five minutes and we’ll supercharge your website.",
 			Bindable:      true,
 			PlanUpdatable: false,
+			Tags:          []string{"Cloudflare", "HTTP2", "SSL", "TLS", "CDN"}, //TODO
 			Plans: []brokerapi.ServicePlan{
 				{
-					ID:          "cloudflare-free",
+					ID:          "e5c2ef96-fda2-417a-92af-dee310081600",
 					Name:        "cloudflare-free",
 					Description: "Fast site performance. Broad security protection. SSL. Powerful stats about your visitors. Peace of mind about running your website so you can get back to what you love.",
+					Metadata: &brokerapi.ServicePlanMetadata{
+						DisplayName: "Cloudflare Free Plan",
+					},
 				},
+			},
+			Metadata: &brokerapi.ServiceMetadata{
+				DisplayName:         "Cloudflare",
+				ImageUrl:            "TODO image url",
+				SupportUrl:          "TODO put github issue link",
+				DocumentationUrl:    "TODO put github README link (maybe KB article)",
+				ProviderDisplayName: "Cloudflare Inc.",
+				LongDescription:     "Fast site performance. Broad security protection. SSL. Powerful stats about your visitors. Peace of mind about running your website so you can get back to what you love.",
 			},
 		},
 	}
