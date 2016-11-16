@@ -1,35 +1,28 @@
 package broker
 
 import (
-	"bytes"
 	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
-	"io/ioutil"
-	"net/http"
 
 	"code.cloudfoundry.org/lager"
+	"github.com/jwineman/Cloudflare-Pivotal-Cloud-Foundry/api"
 	"github.com/pivotal-cf/brokerapi"
 )
 
 const BROKER_PASSWORD = "BROKER_PASSWORD"
 const BROKER_PORT = "BROKER_PORT"
 const BROKER_USERNAME = "BROKER_USERNAME"
-const X_AUTH_EMAIL_HEADER = "X-Auth-Email"
-const X_AUTH_KEY_HEADER = "X-Auth-Key"
 
 const ENDPOINT_NOT_AVAILABLE = "This endpoint is not available"
 
-type CloudflareBroker struct {
-	logger lager.Logger
-	Zones  map[string]Zone
-	Auth   AuthHeaders
-}
+// TODO: http timeouts are missing
 
-type AuthHeaders struct {
-	XAuthEmail string `json:"x-auth-email"`
-	XAuthKey   string `json:"x-auth-key"`
+type CloudflareBroker struct {
+	logger        lager.Logger
+	Zones         map[string]Zone
+	CloudflareAPI api.CloudflareAPIInterface
 }
 
 type Zone struct {
@@ -45,14 +38,6 @@ type ZoneCreateResponse struct {
 	Success  bool          `json:"success"`
 }
 
-func (b *CloudflareBroker) getAuthHeaders() AuthHeaders {
-	return b.Auth
-}
-
-func (b *CloudflareBroker) setAuthHeaders(authHeaders AuthHeaders) {
-	b.Auth = authHeaders
-}
-
 func (*CloudflareBroker) Services(context context.Context) []brokerapi.Service {
 	return []brokerapi.Service{
 		{
@@ -61,7 +46,9 @@ func (*CloudflareBroker) Services(context context.Context) []brokerapi.Service {
 			Description:   "Give us five minutes and we’ll supercharge your website.",
 			Bindable:      true,
 			PlanUpdatable: false,
-			Tags:          []string{"Cloudflare", "HTTP2", "SSL", "TLS", "CDN"}, //TODO
+			// TODO Tags are "Attributes or names of backing technologies behind the service"
+			// http://cloud.spring.io/spring-cloud-connectors/spring-cloud-cloud-foundry-connector.html
+			Tags: []string{"Cloudflare"},
 			Plans: []brokerapi.ServicePlan{
 				{
 					ID:          "e5c2ef96-fda2-417a-92af-dee310081600",
@@ -69,6 +56,7 @@ func (*CloudflareBroker) Services(context context.Context) []brokerapi.Service {
 					Description: "Fast site performance. Broad security protection. SSL. Powerful stats about your visitors. Peace of mind about running your website so you can get back to what you love.",
 					Metadata: &brokerapi.ServicePlanMetadata{
 						DisplayName: "Cloudflare Free Plan",
+						Bullets:     []string{"SSL", "Analytics"},
 					},
 				},
 			},
@@ -85,18 +73,19 @@ func (*CloudflareBroker) Services(context context.Context) []brokerapi.Service {
 }
 
 func (b *CloudflareBroker) Provision(context context.Context, instanceID string, details brokerapi.ProvisionDetails, asyncAllowed bool) (brokerapi.ProvisionedServiceSpec, error) {
-	var authHeaders AuthHeaders
+	var authHeaders api.AuthHeaders
 
 	if err := json.Unmarshal(details.RawParameters, &authHeaders); err != nil {
-		// b.logger.Error("Error decoding details.RawParameters", err)
+		b.logger.Error("Error decoding details.RawParameters", err)
 		return brokerapi.ProvisionedServiceSpec{}, err
 	}
 
-	if authHeaders == (AuthHeaders{}) {
+	if authHeaders == (api.AuthHeaders{}) {
 		return brokerapi.ProvisionedServiceSpec{}, errors.New("Error: Auth parameters are empty")
 	}
 
-	b.setAuthHeaders(authHeaders)
+	// Maybe check if already provision and do not allow unless deprovisioned?
+	b.CloudflareAPI.SetAuthHeaders(authHeaders)
 
 	return brokerapi.ProvisionedServiceSpec{}, nil
 }
@@ -106,15 +95,12 @@ func (b *CloudflareBroker) Deprovision(context context.Context, instanceID strin
 	// TODO Clearing zones may not be the expected behaivour of this function
 	// Also we can clear zones and auth by id provided to details
 	b.Zones = map[string]Zone{}
-	b.Auth = AuthHeaders{}
+	b.CloudflareAPI = &api.CloudflareAPI{}
 
 	return brokerapi.DeprovisionServiceSpec{}, nil
 }
 
 func (b *CloudflareBroker) Bind(context context.Context, instanceID, bindingID string, details brokerapi.BindDetails) (brokerapi.Binding, error) {
-	// Bind to instances here
-	// Return a binding which contains a credentials object that can be marshalled to JSON,
-	// and (optionally) a syslog drain URL.
 	paramDomain, ok := details.Parameters["domain"]
 	if !ok {
 		return brokerapi.Binding{}, errors.New("key 'domain' not found in BindDetails.Parameters.")
@@ -124,45 +110,29 @@ func (b *CloudflareBroker) Bind(context context.Context, instanceID, bindingID s
 	if !ok {
 		return brokerapi.Binding{}, errors.New("key 'domain' is not a in type string.")
 	}
-	var jsonBody = []byte(`{"name" : "` + domain + `"}`)
-	request, err := http.NewRequest("POST", "https://api.cloudflare.com/client/v4/zones", bytes.NewReader(jsonBody))
-	if err != nil {
-		return brokerapi.Binding{}, errors.New("Failed API Call. Please check your connection")
-	}
 
-	var authHeaders = b.getAuthHeaders()
-	request.Header.Add(X_AUTH_EMAIL_HEADER, authHeaders.XAuthEmail)
-	request.Header.Add(X_AUTH_KEY_HEADER, authHeaders.XAuthKey)
-
-	var client = http.Client{}
-	response, err := client.Do(request)
+	data, err := b.CloudflareAPI.AddZone(domain)
 	if err != nil {
-		return brokerapi.Binding{}, err
-	}
-	defer response.Body.Close()
-
-	data, err := ioutil.ReadAll(response.Body)
-	if err != nil {
+		b.logger.Error("Bind calling api.cloudflare", err)
 		return brokerapi.Binding{}, err
 	}
 
-	var ZoneCreateResponse ZoneCreateResponse
-	if err := json.Unmarshal(data, &ZoneCreateResponse); err != nil {
+	var zoneCreateResponse ZoneCreateResponse
+	if err := json.Unmarshal(data, &zoneCreateResponse); err != nil {
 		b.logger.Error("Error decoding details.RawParameters", err)
 		return brokerapi.Binding{}, err
 	}
 
-	if ZoneCreateResponse.Success == false {
-		// TODO: Error should be updated to ZoneCreateResponse.error
-		b.logger.Error("Error from CloudFlare Client API", errors.New(fmt.Sprintf("%+v", ZoneCreateResponse)))
-		return brokerapi.Binding{}, errors.New(fmt.Sprintf("%+v", ZoneCreateResponse))
+	if zoneCreateResponse.Success == false {
+		b.logger.Error("Error from CloudFlare Client API", errors.New(fmt.Sprintf("%+v", zoneCreateResponse)))
+		return brokerapi.Binding{}, errors.New(fmt.Sprintf("%+v", zoneCreateResponse))
 	}
 
 	// TODO: It can be changed to something like "instanceID:bindingID"
-	b.Zones[bindingID] = ZoneCreateResponse.Result
+	b.Zones[bindingID] = zoneCreateResponse.Result
 
 	return brokerapi.Binding{
-		Credentials: ZoneCreateResponse.Result,
+		Credentials: zoneCreateResponse.Result,
 	}, nil
 }
 
@@ -173,19 +143,9 @@ func (b *CloudflareBroker) Unbind(context context.Context, instanceID, bindingID
 	}
 
 	// Delete Zone from Cloudflare
-	requestURL := "https://api.cloudflare.com/client/v4/zones/" + zone.ID
-	request, err := http.NewRequest("DELETE", requestURL, nil)
+	err := b.CloudflareAPI.DeleteZone(zone.ID)
 	if err != nil {
-		return err
-	}
-
-	var authHeaders = b.getAuthHeaders()
-	request.Header.Add(X_AUTH_EMAIL_HEADER, authHeaders.XAuthEmail)
-	request.Header.Add(X_AUTH_KEY_HEADER, authHeaders.XAuthKey)
-
-	var client = http.Client{}
-	_, err = client.Do(request)
-	if err != nil {
+		b.logger.Error("Unbind calling api.cloudflare", err)
 		return err
 	}
 
@@ -196,20 +156,23 @@ func (b *CloudflareBroker) Unbind(context context.Context, instanceID, bindingID
 }
 
 func (b *CloudflareBroker) LastOperation(context context.Context, instanceID, operationData string) (brokerapi.LastOperation, error) {
-	b.logger.Info("LastOperation", lager.Data{"log_message": ENDPOINT_NOT_AVAILABLE})
+	b.logger.Debug("LastOperation", lager.Data{"log_message": ENDPOINT_NOT_AVAILABLE})
 
 	return brokerapi.LastOperation{State: "failed", Description: ENDPOINT_NOT_AVAILABLE}, nil
 }
 
 func (b *CloudflareBroker) Update(context context.Context, instanceID string, details brokerapi.UpdateDetails, asyncAllowed bool) (brokerapi.UpdateServiceSpec, error) {
-	b.logger.Info("Update", lager.Data{"log_message": ENDPOINT_NOT_AVAILABLE})
+	b.logger.Debug("Update", lager.Data{"log_message": ENDPOINT_NOT_AVAILABLE})
 
 	return brokerapi.UpdateServiceSpec{OperationData: ENDPOINT_NOT_AVAILABLE}, nil
 }
 
 func New(logger lager.Logger, zones map[string]Zone) CloudflareBroker {
+	cloudflareAPI := &api.CloudflareAPI{}
+
 	return CloudflareBroker{
-		Zones:  zones,
-		logger: logger,
+		Zones:         zones,
+		CloudflareAPI: cloudflareAPI,
+		logger:        logger,
 	}
 }
