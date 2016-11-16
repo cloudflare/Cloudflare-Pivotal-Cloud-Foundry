@@ -2,10 +2,13 @@ package broker_test
 
 import (
 	"context"
+	"encoding/json"
+	"errors"
 	"testing"
 
 	"code.cloudfoundry.org/lager"
 
+	"github.com/jwineman/Cloudflare-Pivotal-Cloud-Foundry/api"
 	"github.com/jwineman/Cloudflare-Pivotal-Cloud-Foundry/broker"
 	"github.com/pivotal-cf/brokerapi"
 )
@@ -129,6 +132,26 @@ func TestDeprovision(t *testing.T) {
 	}
 }
 
+type FakeCloudflareAPI struct{}
+
+func (api *FakeCloudflareAPI) AddZone(domain string) ([]byte, error) {
+	if domain == "" {
+		return nil, errors.New("Fake Error.")
+	}
+
+	response := broker.ZoneCreateResponse{Success: true}
+	data, _ := json.Marshal(response)
+
+	return data, nil
+}
+
+func (api *FakeCloudflareAPI) DeleteZone(zoneId string) error {
+	return nil
+}
+
+func (api *FakeCloudflareAPI) SetAuthHeaders(authHeaders api.AuthHeaders) {
+}
+
 func TestBindWithEmptyParameters(t *testing.T) {
 	logger := lager.NewLogger("cloudflare-broker")
 	cloudflarebroker := broker.New(logger, map[string]broker.Zone{})
@@ -169,31 +192,51 @@ func TestBindWithFalseParameters(t *testing.T) {
 }
 
 func TestBindWithCorrectParameters(t *testing.T) {
-	// logger := lager.NewLogger("cloudflare-broker")
-	// cloudflarebroker := broker.New(logger, map[string]broker.Zone{})
-	// var context context.Context
-	// instanceId := "1"
-	// bindingId := "2"
+	logger := lager.NewLogger("cloudflare-broker")
+	cloudflarebroker := broker.New(logger, map[string]broker.Zone{})
+	cloudflarebroker.CloudflareAPI = &FakeCloudflareAPI{}
+	var context context.Context
+	instanceId := "1"
+	bindingId := "2"
 
-	// params := map[string]interface{}{
-	// 	"domain": "domain.com",
-	// }
-	// _, err := cloudflarebroker.Bind(
-	// 	context,
-	// 	instanceId,
-	// 	bindingId,
-	// 	brokerapi.BindDetails{Parameters: params},
-	// )
+	params := map[string]interface{}{
+		"domain": "domain.com",
+	}
+	_, err := cloudflarebroker.Bind(
+		context,
+		instanceId,
+		bindingId,
+		brokerapi.BindDetails{Parameters: params},
+	)
 
-	// if err != nil {
-	// 	t.Errorf("Bind failed with false details")
-	// }
-
-	// TODO check binding != (brokerapi.Binding{})
+	if err != nil {
+		t.Errorf("Bind failed with correct details", err)
+	}
 }
 
 func TestUnbind(t *testing.T) {
-	// TODO do this after doing bind
+	bindingId := "123"
+	logger := lager.NewLogger("cloudflare-broker")
+	cloudflarebroker := broker.New(
+		logger,
+		map[string]broker.Zone{
+			bindingId: broker.Zone{Name: "First"},
+		},
+	)
+	cloudflarebroker.CloudflareAPI = &FakeCloudflareAPI{}
+	var context context.Context
+	instanceId := "1"
+
+	err := cloudflarebroker.Unbind(
+		context,
+		instanceId,
+		bindingId,
+		brokerapi.UnbindDetails{},
+	)
+
+	if err != nil || len(cloudflarebroker.Zones) != 0 {
+		t.Errorf("Unbind failed", err)
+	}
 }
 
 func TestLastOperation(t *testing.T) {
@@ -221,6 +264,3 @@ func TestUpdate(t *testing.T) {
 		t.Errorf("LastOperation failed")
 	}
 }
-
-// TODO getAuthHeaders()
-// TODO setAuthHeaders
