@@ -1,19 +1,11 @@
 {
-	"ImportPath": "github.com/jwineman/CloudFlare-Pivotal-Cloud-Foundry",
-	"GoVersion": "go1.6",
-	"GodepVersion": "v74",
-	"Packages": [
-		"./..."
-	],
+	"ImportPath": "github.com/cloudflare/Cloudflare-Pivotal-Cloud-Foundry",
+	"GoVersion": "go1.7",
+	"GodepVersion": "v75",
 	"Deps": [
 		{
 			"ImportPath": "code.cloudfoundry.org/lager",
 			"Rev": "62951a8009ab331bb21dc418074fa54e66eb9b6a"
-		},
-		{
-			"ImportPath": "github.com/gorilla/context",
-			"Comment": "v1.1-7-g08b5f42",
-			"Rev": "08b5f424b9271eedf6f9f0ce86cb9396ed337a42"
 		},
 		{
 			"ImportPath": "github.com/gorilla/mux",
