@@ -8,8 +8,8 @@ import (
 
 	"code.cloudfoundry.org/lager"
 
-	"github.com/jwineman/Cloudflare-Pivotal-Cloud-Foundry/api"
-	"github.com/jwineman/Cloudflare-Pivotal-Cloud-Foundry/broker"
+	"github.com/cloudflare/Cloudflare-Pivotal-Cloud-Foundry/api"
+	"github.com/cloudflare/Cloudflare-Pivotal-Cloud-Foundry/broker"
 	"github.com/pivotal-cf/brokerapi"
 )
 
