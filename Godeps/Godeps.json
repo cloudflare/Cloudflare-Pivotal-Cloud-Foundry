@@ -14,11 +14,11 @@
 		},
 		{
 			"ImportPath": "github.com/pivotal-cf/brokerapi",
-			"Rev": "49533adbb2d7b3ef588ac6c7206da47d27de80b6"
+			"Rev": "3dcb3e88faf1f81359679aa1b931df45d30f01de"
 		},
 		{
 			"ImportPath": "github.com/pivotal-cf/brokerapi/auth",
-			"Rev": "49533adbb2d7b3ef588ac6c7206da47d27de80b6"
+			"Rev": "3dcb3e88faf1f81359679aa1b931df45d30f01de"
 		}
 	]
 }
