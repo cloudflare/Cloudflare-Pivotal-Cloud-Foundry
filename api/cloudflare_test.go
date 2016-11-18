@@ -4,7 +4,7 @@ import (
 	"reflect"
 	"testing"
 
-	"github.com/jwineman/Cloudflare-Pivotal-Cloud-Foundry/api"
+	"github.com/cloudflare/Cloudflare-Pivotal-Cloud-Foundry/api"
 )
 
 func TestGetAuthHeaders(t *testing.T) {

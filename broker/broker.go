@@ -7,7 +7,7 @@ import (
 	"fmt"
 
 	"code.cloudfoundry.org/lager"
-	"github.com/jwineman/Cloudflare-Pivotal-Cloud-Foundry/api"
+	"github.com/cloudflare/Cloudflare-Pivotal-Cloud-Foundry/api"
 	"github.com/pivotal-cf/brokerapi"
 )
 
