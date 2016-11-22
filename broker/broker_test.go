@@ -44,7 +44,7 @@ func TestService(t *testing.T) {
 	var context context.Context
 
 	service := cloudflarebroker.Services(context)
-	if service[0].Name != "Cloudflare" {
+	if service[0].Name != "Cloudflare Performance & Security" {
 		t.Errorf("Service failed")
 	}
 }
@@ -210,22 +210,23 @@ func TestBindWithCorrectParameters(t *testing.T) {
 	)
 
 	if err != nil {
-		t.Errorf("Bind failed with correct details", err)
+		t.Errorf("Bind failed with correct details %v", err)
 	}
 }
 
 func TestUnbind(t *testing.T) {
-	bindingId := "123"
+	instanceId := "instanceId"
+	bindingId := "bindingId"
+	zoneKey := instanceId + ":" + bindingId
 	logger := lager.NewLogger("cloudflare-broker")
 	cloudflarebroker := broker.New(
 		logger,
 		map[string]broker.Zone{
-			bindingId: broker.Zone{Name: "First"},
+			zoneKey: broker.Zone{Name: "First"},
 		},
 	)
 	cloudflarebroker.CloudflareAPI = &FakeCloudflareAPI{}
 	var context context.Context
-	instanceId := "1"
 
 	err := cloudflarebroker.Unbind(
 		context,
@@ -235,7 +236,7 @@ func TestUnbind(t *testing.T) {
 	)
 
 	if err != nil || len(cloudflarebroker.Zones) != 0 {
-		t.Errorf("Unbind failed", err)
+		t.Errorf("Unbind failed %v", err)
 	}
 }
 
