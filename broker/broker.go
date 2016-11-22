@@ -42,31 +42,38 @@ func (*CloudflareBroker) Services(context context.Context) []brokerapi.Service {
 	return []brokerapi.Service{
 		{
 			ID:            "31e38e96-df7e-4a38-b3cb-f489fc8ab421",
-			Name:          "Cloudflare",
-			Description:   "Give us five minutes and we’ll supercharge your website.",
+			Name:          "Cloudflare Performance & Security",
+			Description:   "Cloud-based performance and security solution for websites and applications.",
 			Bindable:      true,
 			PlanUpdatable: false,
-			// TODO Tags are "Attributes or names of backing technologies behind the service"
+			// Tags are "Attributes or names of backing technologies behind the service"
 			// http://cloud.spring.io/spring-cloud-connectors/spring-cloud-cloud-foundry-connector.html
 			Tags: []string{"Cloudflare"},
 			Plans: []brokerapi.ServicePlan{
 				{
 					ID:          "e5c2ef96-fda2-417a-92af-dee310081600",
 					Name:        "cloudflare-free",
-					Description: "Fast site performance. Broad security protection. SSL. Powerful stats about your visitors. Peace of mind about running your website so you can get back to what you love.",
+					Description: "Cloudflare delivers performance, security, reliability and insights for all websites and applications that join the network. Once your website is on Cloudflare, all traffic will be routed through their intelligent global network of 100+ data centers. Cloudflare’s platform includes a myriad of security features, including DDoS attack mitigation and a web application firewall (WAF) for paid plans.",
 					Metadata: &brokerapi.ServicePlanMetadata{
-						DisplayName: "Cloudflare Free Plan",
-						Bullets:     []string{"SSL", "Analytics"},
+						DisplayName: "Free",
+						Bullets: []string{
+							"Limited DDoS protection",
+							"No bandwidth limits",
+							"Global CDN",
+							"Shared SSL certificate",
+							"I'm Under Attack™ mode",
+							"3 Page Rules included",
+						},
 					},
 				},
 			},
 			Metadata: &brokerapi.ServiceMetadata{
 				DisplayName:         "Cloudflare",
-				ImageUrl:            "TODO image url",
-				SupportUrl:          "TODO put github issue link",
-				DocumentationUrl:    "TODO put github README link (maybe KB article)",
-				ProviderDisplayName: "Cloudflare Inc.",
-				LongDescription:     "Fast site performance. Broad security protection. SSL. Powerful stats about your visitors. Peace of mind about running your website so you can get back to what you love.",
+				ImageUrl:            "https://www.cloudflare.com/img/logo-cloudflare.svg",
+				SupportUrl:          "support.cloudflare.com",
+				DocumentationUrl:    "https://github.com/cloudflare/Cloudflare-Pivotal-Cloud-Foundry",
+				ProviderDisplayName: "Cloudflare",
+				LongDescription:     "Cloudflare delivers performance, security, reliability and insights for all websites and applications that join the network. Once your website is on Cloudflare, all traffic will be routed through their intelligent global network of 100+ data centers. Cloudflare’s platform includes a myriad of security features, including DDoS attack mitigation and a web application firewall (WAF) for paid plans.",
 			},
 		},
 	}
