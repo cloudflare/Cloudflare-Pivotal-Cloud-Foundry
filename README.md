@@ -1,5 +1,19 @@
 # CloudFlare-Pivotal-Cloud-Foundry
 
+## Usage
+
+Be sure you have `$GOPATH` setup.
+
+Set environment variables
+```
+export BROKER_USERNAME=username
+export BROKER_PASSWORD=password
+export BROKER_PORT=9000
+```
+
+`go run main.go` runs the service on localhost.
+`go test ./...` runs tests.
+
 ## Example cURL calls
 
 In the example the following attributes are replaced with the corresponding value.
