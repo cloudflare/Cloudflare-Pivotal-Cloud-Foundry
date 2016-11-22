@@ -17,8 +17,6 @@ const BROKER_USERNAME = "BROKER_USERNAME"
 
 const ENDPOINT_NOT_AVAILABLE = "This endpoint is not available"
 
-// TODO: http timeouts are missing
-
 type CloudflareBroker struct {
 	logger        lager.Logger
 	Zones         map[string]Zone
@@ -36,6 +34,10 @@ type ZoneCreateResponse struct {
 	Messages []interface{} `json:"messages"`
 	Result   Zone          `json:"result"`
 	Success  bool          `json:"success"`
+}
+
+func getZoneKey(instanceID string, bindingID string) string {
+	return instanceID + ":" + bindingID
 }
 
 func (*CloudflareBroker) Services(context context.Context) []brokerapi.Service {
@@ -99,9 +101,6 @@ func (b *CloudflareBroker) Provision(context context.Context, instanceID string,
 
 func (b *CloudflareBroker) Deprovision(context context.Context, instanceID string, details brokerapi.DeprovisionDetails, asyncAllowed bool) (brokerapi.DeprovisionServiceSpec, error) {
 	// Clear data
-	// TODO Clearing zones may not be the expected behaivour of this function
-	// Also we can clear zones and auth by id provided to details
-	b.Zones = map[string]Zone{}
 	b.CloudflareAPI = &api.CloudflareAPI{}
 
 	return brokerapi.DeprovisionServiceSpec{}, nil
@@ -135,8 +134,8 @@ func (b *CloudflareBroker) Bind(context context.Context, instanceID, bindingID s
 		return brokerapi.Binding{}, errors.New(fmt.Sprintf("%+v", zoneCreateResponse))
 	}
 
-	// TODO: It can be changed to something like "instanceID:bindingID"
-	b.Zones[bindingID] = zoneCreateResponse.Result
+	zoneKey := getZoneKey(instanceID, bindingID)
+	b.Zones[zoneKey] = zoneCreateResponse.Result
 
 	return brokerapi.Binding{
 		Credentials: zoneCreateResponse.Result,
@@ -144,7 +143,8 @@ func (b *CloudflareBroker) Bind(context context.Context, instanceID, bindingID s
 }
 
 func (b *CloudflareBroker) Unbind(context context.Context, instanceID, bindingID string, details brokerapi.UnbindDetails) error {
-	zone, ok := b.Zones[bindingID]
+	zoneKey := getZoneKey(instanceID, bindingID)
+	zone, ok := b.Zones[zoneKey]
 	if !ok {
 		return errors.New("Zone does not exist")
 	}
@@ -157,7 +157,7 @@ func (b *CloudflareBroker) Unbind(context context.Context, instanceID, bindingID
 	}
 
 	// Remove from local Zone List
-	delete(b.Zones, bindingID)
+	delete(b.Zones, zoneKey)
 
 	return nil
 }
