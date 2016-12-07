@@ -8,7 +8,7 @@ Set environment variables
 ```
 export BROKER_USERNAME=username
 export BROKER_PASSWORD=password
-export BROKER_PORT=9000
+export PORT=9000
 ```
 
 `go run main.go` runs the service on localhost.

@@ -12,7 +12,7 @@ import (
 )
 
 const BROKER_PASSWORD = "BROKER_PASSWORD"
-const BROKER_PORT = "BROKER_PORT"
+const BROKER_PORT = "PORT"
 const BROKER_USERNAME = "BROKER_USERNAME"
 
 const ENDPOINT_NOT_AVAILABLE = "This endpoint is not available"
