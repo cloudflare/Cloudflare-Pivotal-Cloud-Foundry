@@ -44,7 +44,7 @@ func (*CloudflareBroker) Services(context context.Context) []brokerapi.Service {
 	return []brokerapi.Service{
 		{
 			ID:            "31e38e96-df7e-4a38-b3cb-f489fc8ab421",
-			Name:          "Cloudflare Performance & Security",
+			Name:          "cloudflare",
 			Description:   "Cloud-based performance and security solution for websites and applications.",
 			Bindable:      true,
 			PlanUpdatable: false,
@@ -54,7 +54,7 @@ func (*CloudflareBroker) Services(context context.Context) []brokerapi.Service {
 			Plans: []brokerapi.ServicePlan{
 				{
 					ID:          "e5c2ef96-fda2-417a-92af-dee310081600",
-					Name:        "cloudflare-free",
+					Name:        "free",
 					Description: "Cloudflare delivers performance, security, reliability and insights for all websites and applications that join the network.",
 					Metadata: &brokerapi.ServicePlanMetadata{
 						DisplayName: "Free",

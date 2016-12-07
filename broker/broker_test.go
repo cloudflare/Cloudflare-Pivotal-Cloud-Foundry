@@ -44,7 +44,7 @@ func TestService(t *testing.T) {
 	var context context.Context
 
 	service := cloudflarebroker.Services(context)
-	if service[0].Name != "Cloudflare Performance & Security" {
+	if service[0].Name != "cloudflare" {
 		t.Errorf("Service failed")
 	}
 }
