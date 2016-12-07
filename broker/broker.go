@@ -55,7 +55,7 @@ func (*CloudflareBroker) Services(context context.Context) []brokerapi.Service {
 				{
 					ID:          "e5c2ef96-fda2-417a-92af-dee310081600",
 					Name:        "cloudflare-free",
-					Description: "Cloudflare delivers performance, security, reliability and insights for all websites and applications that join the network. Once your website is on Cloudflare, all traffic will be routed through their intelligent global network of 100+ data centers. Cloudflare’s platform includes a myriad of security features, including DDoS attack mitigation and a web application firewall (WAF) for paid plans.",
+					Description: "Cloudflare delivers performance, security, reliability and insights for all websites and applications that join the network.",
 					Metadata: &brokerapi.ServicePlanMetadata{
 						DisplayName: "Free",
 						Bullets: []string{
