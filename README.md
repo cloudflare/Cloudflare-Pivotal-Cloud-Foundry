@@ -14,6 +14,11 @@ export PORT=3000
 `go run main.go` runs the service on localhost.
 `go test ./...` runs tests.
 
+## Documentation
+
+- CF Command Line Interface Documentation https://docs.cloudfoundry.org/cf-cli/
+- Service Broker API Documentation https://docs.cloudfoundry.org/services/api.html
+
 ## Example cURL calls
 
 In the example the following attributes are replaced with the corresponding value.
