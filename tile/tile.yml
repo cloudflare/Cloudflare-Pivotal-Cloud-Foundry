@@ -55,24 +55,24 @@ packages:
 # elsewhere in this template by using:
 #     (( .properties.<property-name> ))
 # 
-forms:
-- name: cloudflare_enviornment_variables
-  label: Cloudflare
-  description: Environmnet Variables for Cloudflare Service Broker
-  properties:
-  - name: broker_username
-    type: string
-    label: broker_username
-    description: broker_username
-  - name: broker_password
-    type: secret
-    label: broker_password
-    description: broker_password
-  - name: port
-    type: integer
-    default: '3000'
-    label: port
-    description: port
+#forms:
+#- name: cloudflare_enviornment_variables
+#  label: Cloudflare
+#  description: Environmnet Variables for Cloudflare Service Broker
+#  properties:
+#  - name: broker_username
+#    type: string
+#    label: broker_username
+#    description: broker_username
+#  - name: broker_password
+#    type: secret
+#    label: broker_password
+#    description: broker_password
+#  - name: port
+#    type: integer
+#    default: '3000'
+#    label: port
+#    description: port
 
 
 # Add any dependencies your tile has on other installed products.
