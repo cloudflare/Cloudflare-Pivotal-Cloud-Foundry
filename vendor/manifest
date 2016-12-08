@@ -1,0 +1,72 @@
+{
+	"version": 0,
+	"dependencies": [
+		{
+			"importpath": "code.cloudfoundry.org/lager",
+			"repository": "https://github.com/cloudfoundry/lager",
+			"vcs": "git",
+			"revision": "6cfe365fb6bb84343f0034b4a53cd250d173b61f",
+			"branch": "master",
+			"notests": true
+		},
+		{
+			"importpath": "github.com/gorilla/context",
+			"repository": "https://github.com/gorilla/context",
+			"vcs": "git",
+			"revision": "08b5f424b9271eedf6f9f0ce86cb9396ed337a42",
+			"branch": "master",
+			"notests": true
+		},
+		{
+			"importpath": "github.com/gorilla/mux",
+			"repository": "https://github.com/gorilla/mux",
+			"vcs": "git",
+			"revision": "757bef944d0f21880861c2dd9c871ca543023cba",
+			"branch": "master",
+			"notests": true
+		},
+		{
+			"importpath": "github.com/onsi/ginkgo",
+			"repository": "https://github.com/onsi/ginkgo",
+			"vcs": "git",
+			"revision": "00054c0bb96fc880d4e0be1b90937fad438c5290",
+			"branch": "master",
+			"notests": true
+		},
+		{
+			"importpath": "github.com/onsi/gomega/format",
+			"repository": "https://github.com/onsi/gomega",
+			"vcs": "git",
+			"revision": "f1f0f388b31eca4e2cbe7a6dd8a3a1dfddda5b1c",
+			"branch": "master",
+			"path": "format",
+			"notests": true
+		},
+		{
+			"importpath": "github.com/onsi/gomega/gbytes",
+			"repository": "https://github.com/onsi/gomega",
+			"vcs": "git",
+			"revision": "f1f0f388b31eca4e2cbe7a6dd8a3a1dfddda5b1c",
+			"branch": "master",
+			"path": "/gbytes",
+			"notests": true
+		},
+		{
+			"importpath": "github.com/pivotal-cf/brokerapi",
+			"repository": "https://github.com/pivotal-cf/brokerapi",
+			"vcs": "git",
+			"revision": "3dcb3e88faf1f81359679aa1b931df45d30f01de",
+			"branch": "master",
+			"notests": true
+		},
+		{
+			"importpath": "golang.org/x/sys/unix",
+			"repository": "https://go.googlesource.com/sys",
+			"vcs": "git",
+			"revision": "478fcf54317e52ab69f40bb4c7a1520288d7f7ea",
+			"branch": "master",
+			"path": "/unix",
+			"notests": true
+		}
+	]
+}
