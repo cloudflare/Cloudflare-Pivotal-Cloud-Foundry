@@ -21,11 +21,11 @@ apply_open_security_group: true         # Apply open security group, default: fa
 # https://github.com/cf-platform-eng/tile-generator/blob/master/README.md
 #
 packages:
-- name: my-application
-  type: app
+- name: cloudflare-broker
+  type: app-broker
 #  label: My fabulous appplication      # Package name for use in human-readable labels in OpsManager
   manifest:
-    path: main
+    path: ../src 
 #   command: main
 #   memory: 256M
 

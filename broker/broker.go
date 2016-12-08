@@ -11,9 +11,9 @@ import (
 	"github.com/pivotal-cf/brokerapi"
 )
 
-const BROKER_PASSWORD = "BROKER_PASSWORD"
+const BROKER_PASSWORD = "SECURITY_USER_PASSWORD"
 const BROKER_PORT = "PORT"
-const BROKER_USERNAME = "BROKER_USERNAME"
+const BROKER_USERNAME = "SECURITY_USER_NAME"
 
 const ENDPOINT_NOT_AVAILABLE = "This endpoint is not available"
 

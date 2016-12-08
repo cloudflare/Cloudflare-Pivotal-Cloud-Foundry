@@ -6,9 +6,9 @@ Be sure you have `$GOPATH` setup.
 
 Set environment variables
 ```
-export BROKER_USERNAME=username
-export BROKER_PASSWORD=password
-export PORT=9000
+export SECURITY_USER_NAME=username
+export SECURITY_USER_PASSWORD=password
+export PORT=3000
 ```
 
 `go run main.go` runs the service on localhost.
