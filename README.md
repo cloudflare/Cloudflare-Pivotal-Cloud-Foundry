@@ -1,4 +1,5 @@
 # CloudFlare-Pivotal-Cloud-Foundry
+[![Build Status](https://travis-ci.org/cloudflare/Cloudflare-Pivotal-Cloud-Foundry.svg?branch=master)](https://travis-ci.org/cloudflare/Cloudflare-Pivotal-Cloud-Foundry)
 
 ## Usage
 
