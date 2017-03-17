@@ -1,7 +1,7 @@
 # Pivotal Cloud Foundry Tile Generation
 
 ## Documentation
-http://cf-platform-eng.github.io/isv-portal/tile-generator/
+http://docs.pivotal.io/tiledev/tile-generator.html
 
 ## Setup
 
@@ -25,6 +25,6 @@ tree
     └── README.md
 ```
 
-This is because `tile build` looks at the `packages` `manifest` `path` recursively to generate the tile and it will break if the tile code is inside of the src code. 
+This is because `tile build` looks at the `packages` `manifest` `path` recursively to generate the tile and it will break if the tile code is inside of the src code.
 
 After you get mimic this directory structure run `tile build` and the .pivotal file in `tile/product` will be what you upload.
